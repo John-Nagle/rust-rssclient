@@ -1,0 +1,23 @@
+[package]
+name = "rss_client"
+version = "0.0.1"
+authors = ["John Nagle <nagle@animats.com>"]
+
+
+[dependencies.hyper]
+#   Temporary until Hyper finishes old_io removal
+git = "https://github.com/hyperium/hyper.git"
+# rev = "2ce4385c163e1a9a393c89743cf04e047b776e83"
+
+[dependencies.RustyXML]
+git = "https://github.com/Florob/RustyXML"
+
+[dependencies.chrono]
+#   Temporary until chrono gets some parsing functions.
+# git = "https://github.com/John-Nagle/rust-chrono"
+
+[[bin]]
+name = "rss_client"
+
+
+
