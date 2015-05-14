@@ -75,7 +75,7 @@ pub enum FeedError {
     /// Error detected at the I/O level
     FeedIoError(io::Error),
     /// Error detected at the HTTP level
-    FeedHTTPError(hyper::HttpError),
+    FeedHTTPError(hyper::Error),
     /// Error detected at the XML parsing level
     FeedXMLParseError(xml::BuilderError),
     /// Error detected at the date parsing level
@@ -90,8 +90,8 @@ pub enum FeedError {
 //
 //  Encapsulate errors from each of the lower level error types
 //
-impl convert::From<hyper::HttpError> for FeedError {
-    fn from(err: hyper::HttpError) -> FeedError {
+impl convert::From<hyper::Error> for FeedError {
+    fn from(err: hyper::Error) -> FeedError {
         FeedError::FeedHTTPError(err)
     }
 }
