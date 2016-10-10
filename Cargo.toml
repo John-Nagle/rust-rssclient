@@ -1,17 +1,12 @@
 [package]
 name = "rss_client"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["John Nagle <nagle@animats.com>"]
 
-
-[dependencies.hyper]
-
-[dependencies.RustyXML]
-git = "https://github.com/Florob/RustyXML"
-
-[dependencies.chrono]
-#   Temporary until chrono gets some parsing functions.
-# git = "https://github.com/John-Nagle/rust-chrono"
+[dependencies]
+hyper="*"
+chrono="*"
+RustyXML = "0.1.1"
 
 [[bin]]
 name = "rss_client"
