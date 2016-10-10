@@ -243,7 +243,7 @@ pub fn handlersstree(tree: &xml::Element, reply: &mut FeedReply) -> FeedResult<(
 //  readfeed -- read from an RSS or Atom feed.
 // 
 pub fn readfeed(url: &str, reply: &mut FeedReply, verbose: bool) -> FeedResult<()> {
-    let mut client = hyper::Client::new();                  // create HTTP client from Hyper crate.
+    let client = hyper::Client::new();                  // create HTTP client from Hyper crate.
     let mut res = match client.get(url).send() {            // HTTP GET request
         Ok(res) => res,
         Err(xerr) => return Err(convert::From::from(xerr)) // fails, return error
