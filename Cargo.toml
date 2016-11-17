@@ -7,6 +7,7 @@ authors = ["John Nagle <nagle@animats.com>"]
 hyper="*"
 chrono="*"
 RustyXML = "0.1.1"
+unicode-segmentation = "0.1.2"
 
 [[bin]]
 name = "rss_client"

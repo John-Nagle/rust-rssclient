@@ -10,6 +10,7 @@ use std::io;
 use std::io::Read;
 use std::fmt;
 use std::env;
+use wordwrap;
 
 
 //
@@ -160,7 +161,7 @@ impl FeedItem {
         println!(" Title: {}", self.title);
         println!(" Author: {}", self.author);
         println!(" Publication date: {}", self.pubdate);
-        println!(" Description: {}", self.description);
+        println!(" Description:\n{}", &wordwrap::wordwrap(&self.description, 72,20));
         println!("");
     }
 }
