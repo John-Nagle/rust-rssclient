@@ -6,6 +6,8 @@
 use std::io;
 use std::str;
 extern crate unicode_segmentation;
+extern crate itertools;
+use self::itertools::Itertools;
 use self::unicode_segmentation::UnicodeSegmentation;
 ///
 ///  rfind for an array of graphemes
@@ -42,8 +44,7 @@ pub fn wordwrap(s: &str, maxline: usize, maxword: usize) -> String {
     s.lines()
         .map(|bline| UnicodeSegmentation::graphemes(bline, true)    // yields vec of graphemes (&str)
             .collect::<Vec<&str>>())
-        .map(|line| wordwrapline(&line, maxline, maxword))
-        .collect::<Vec<String>>()        
+        .map(|line| wordwrapline(&line, maxline, maxword))     
         .join("\n")
 }
 
