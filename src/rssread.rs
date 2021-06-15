@@ -2,7 +2,7 @@
 //  rss reader - main program
 //
 //
-extern crate hyper;
+extern crate reqwest;
 extern crate xml;
 extern crate chrono;
 use std::convert;
@@ -76,7 +76,7 @@ pub enum FeedError {
     /// Error detected at the I/O level
     FeedIoError(io::Error),
     /// Error detected at the HTTP level
-    FeedHTTPError(hyper::Error),
+    FeedHTTPError(reqwest::Error),
     /// Error detected at the XML parsing level
     FeedXMLParseError(xml::BuilderError),
     /// Error detected at the date parsing level
@@ -91,8 +91,8 @@ pub enum FeedError {
 //
 //  Encapsulate errors from each of the lower level error types
 //
-impl convert::From<hyper::Error> for FeedError {
-    fn from(err: hyper::Error) -> FeedError {
+impl convert::From<reqwest::Error> for FeedError {
+    fn from(err: reqwest::Error) -> FeedError {
         FeedError::FeedHTTPError(err)
     }
 }
@@ -244,15 +244,16 @@ pub fn handlersstree(tree: &xml::Element, reply: &mut FeedReply) -> FeedResult<(
 //  readfeed -- read from an RSS or Atom feed.
 // 
 pub fn readfeed(url: &str, reply: &mut FeedReply, verbose: bool) -> FeedResult<()> {
-    let client = hyper::Client::new();                  // create HTTP client from Hyper crate.
-    let mut res = match client.get(url).send() {            // HTTP GET request
+    ////let client = hyper::Client::new();                  // create HTTP client from Hyper crate.
+    let mut res = match reqwest::blocking::get(url) {
+    ////let mut res = match client.get(url).send() {            // HTTP GET request
         Ok(res) => res,
         Err(xerr) => return Err(convert::From::from(xerr)) // fails, return error
     };
     //  Successful read of URL.  Have valid result object.
     if verbose {
-        println!("Response: {}", res.status);               // debug print
-        println!("Headers:\n{}", res.headers);
+        println!("Response: {}", res.status());               // debug print
+        println!("Headers:\n{:?}", res.headers());
     }
     let mut p = xml::Parser::new();                         // get XML parser
     let mut e = xml::ElementBuilder::new();                 // get tree builder
@@ -308,7 +309,8 @@ pub fn test1() {
 //
 #[test]
 fn testreutersrss() {
-    let url = "http://feeds.reuters.com/reuters/topNews?format=xml";    // ***TEMP***
+    ////let url = "http://feeds.reuters.com/reuters/topNews?format=xml";    // ***TEMP***
+    let url = "https://rss.nytimes.com/services/xml/rss/nyt/World.xml";
     let mut freply = FeedReply::new();            // accumulate ITEM entries
     let res = readfeed(url, &mut freply, true);
     match res {
