@@ -5,6 +5,7 @@ version = "0.0.5"
 authors = ["John Nagle <nagle@animats.com>"]
 
 [dependencies]
+tokio = { version = "1.14", features = ["rt", "macros"] }
 reqwest = { version = "0.11", features = ["blocking"	] }
 chrono = "0.4.19"
 RustyXML = "0.3.0"

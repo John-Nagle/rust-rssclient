@@ -7,7 +7,6 @@ extern crate xml;
 extern crate chrono;
 use std::convert;
 use std::io;
-use std::io::Read;
 use std::fmt;
 use std::env;
 use super::wordwrap;
@@ -240,10 +239,9 @@ pub fn handlersstree(tree: &xml::Element, reply: &mut FeedReply) -> FeedResult<(
 //
 //  readfeed -- read from an RSS or Atom feed.
 // 
-pub fn readfeed(url: &str, reply: &mut FeedReply, verbose: bool) -> FeedResult<()> {
+pub async fn readfeed(url: &str, reply: &mut FeedReply, verbose: bool) -> FeedResult<()> {
     ////let client = hyper::Client::new();                  // create HTTP client from Hyper crate.
-    let mut res = match reqwest::blocking::get(url) {
-    ////let mut res = match client.get(url).send() {            // HTTP GET request
+    let res = match reqwest::get(url).await {
         Ok(res) => res,
         Err(xerr) => return Err(convert::From::from(xerr)) // fails, return error
     };
@@ -254,9 +252,8 @@ pub fn readfeed(url: &str, reply: &mut FeedReply, verbose: bool) -> FeedResult<(
     }
     let mut p = xml::Parser::new();                         // get XML parser
     let mut e = xml::ElementBuilder::new();                 // get tree builder
-    let mut ws = String::new();                             // get work string for XML
-    match res.read_to_string(&mut ws) {                     // read the XML
-        Ok(_) => (),                                        // OK, keep going
+    let ws = match res.text().await {                         // read the XML
+        Ok(s) => s,                                         // OK, keep going
         Err(xerr) => { return Err(convert::From::from(xerr)) }   // I/O error
     };
     p.feed_str(&ws[..]);                                    // prepare XML parser
@@ -279,7 +276,7 @@ pub fn readfeed(url: &str, reply: &mut FeedReply, verbose: bool) -> FeedResult<(
 //
 //  Ask for URL of RSS feed, handle it.
 //
-pub fn test1() {
+pub async fn test1() {
     let args : Vec<_> = env::args().collect();      // command line args as vector of strings
     match args.len() {
         2 => (),
@@ -291,7 +288,7 @@ pub fn test1() {
     let url = &*args[1];
     println!("Reading \"{}\"", url);
     let mut result = FeedReply::new();            // accumulate ITEM entries
-    let res = readfeed(url, &mut result, true);
+    let res = readfeed(url, &mut result, true).await;
     match res {
         Ok(_) => println!("OK."),
         Err(err) => println!("Error: {}", err)
@@ -301,6 +298,7 @@ pub fn test1() {
 //
 //  Unit tests.
 //
+/*  Async functions cannot be used for tests
 #[test]
 fn testreutersrss() {
     ////let url = "http://feeds.reuters.com/reuters/topNews?format=xml";    // ***TEMP***
@@ -313,6 +311,7 @@ fn testreutersrss() {
         }
     freply.dump();
 }
+*/
 
 
 
