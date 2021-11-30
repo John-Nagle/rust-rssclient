@@ -10,7 +10,7 @@ use std::io;
 use std::io::Read;
 use std::fmt;
 use std::env;
-use wordwrap;
+use super::wordwrap;
 
 
 //
