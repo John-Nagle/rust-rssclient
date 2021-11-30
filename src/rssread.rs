@@ -28,16 +28,13 @@ pub fn find_all<'a>(tree: &'a xml::Element, testfn: fn(&xml::Element) -> bool, f
         if !recurse { return }                              // don't explore within finds if non-recursive
     }
     for child in tree.children.iter() {                     // for all children
-        match *child {                                      // child is an Xml enum
-            xml::Xml::ElementNode(ref childelt) => { find_all(childelt, testfn, finds, recurse ); }, // do ElementNode recursively
-            _ => ()                                         // ignore non ElementNode children
-        }                                                   // end match child
+        if let xml::Xml::ElementNode(ref childelt) = *child { find_all(childelt, testfn, finds, recurse ); }
     }
 }
 //
 //  find_all_text -- find all text below a tag.
 //
-pub fn find_all_text<'a>(tree: &'a xml::Element, s: &mut String, recurse: bool) {
+pub fn find_all_text(tree: &xml::Element, s: &mut String, recurse: bool) {
     for child in tree.children.iter() {                     // for all children
         match *child {                                      // child is an Xml enum
             xml::Xml::ElementNode(ref childelt) => {
@@ -264,17 +261,14 @@ pub fn readfeed(url: &str, reply: &mut FeedReply, verbose: bool) -> FeedResult<(
     };
     p.feed_str(&ws[..]);                                    // prepare XML parser
     for event in p {                                        // for each full XML tree (normally only one)
-        match e.handle_event(event) {                       // process the tree
-            Some(rep) => {                                  // returns an Option wrapped around a Result
-                match rep {
-                    Ok(ev) => match handletree(&ev, reply) {// we have an XML tree to process
-                        Ok(()) => (),
-                        Err(xerr) => return Err(xerr)   // RSS/Atom error
-                        },                                  // end match handletree
-                    Err(xerr) => return Err(convert::From::from(xerr)) 
-                    }                                       // end match rep
-                }                                           // end some rep
-            None => ()                                      // no full tree yet, keep going
+        if let Some(rep) = e.handle_event(event) {                                  // returns an Option wrapped around a Result
+            match rep {
+                Ok(ev) => match handletree(&ev, reply) {    // we have an XML tree to process
+                    Ok(()) => (),
+                    Err(xerr) => return Err(xerr)           // RSS/Atom error
+                    },                                      // end match handletree
+                Err(xerr) => return Err(convert::From::from(xerr)) 
+            }                                           // end match rep
         }                                                   // end match handle_event
     }                                                       // end for
     Ok(())
