@@ -25,7 +25,7 @@ use wordwrap;
 pub fn find_all<'a>(tree: &'a xml::Element, testfn: fn(&xml::Element) -> bool, finds: &mut Vec<&'a xml::Element>, recurse: bool) {
     if testfn(tree)                                         // if match 
     {   finds.push(tree);                                   // save if match on name
-        if recurse == false { return }                      // don't explore within finds if non-recursive
+        if !recurse { return }                              // don't explore within finds if non-recursive
     }
     for child in tree.children.iter() {                     // for all children
         match *child {                                      // child is an Xml enum
@@ -45,7 +45,7 @@ pub fn find_all_text<'a>(tree: &'a xml::Element, s: &mut String, recurse: bool) 
                     find_all_text(childelt, s, recurse);    // do ElementNode recursively
                     }
                 },
-            xml::Xml::CharacterNode(ref text) => { s.push_str(&text) }  // append text
+            xml::Xml::CharacterNode(ref text) => { s.push_str(text) }  // append text
             _ => ()                                         // ignore non ElementNode children
         }                                                   // end match child
     }
@@ -74,43 +74,43 @@ pub type FeedResult<T> = Result<T, FeedError>;
 //#[derive(Debug, PartialEq, Clone)] // crank out default functions
 pub enum FeedError {
     /// Error detected at the I/O level
-    FeedIoError(io::Error),
+    Io(io::Error),
     /// Error detected at the HTTP level
-    FeedHTTPError(reqwest::Error),
+    Http(reqwest::Error),
     /// Error detected at the XML parsing level
-    FeedXMLParseError(xml::BuilderError),
+    XMLParse(xml::BuilderError),
     /// Error detected at the date parsing level
-    FeedDateParseError(chrono::format::ParseError),
+    DateParse(chrono::format::ParseError),
     /// XML, but feed type not recognized,
-    FeedUnknownFeedTypeError,
+    UnknownFeedType,
     /// Required feed field missing or invalid
-    FeedFieldError(String),
+    Field(String),
     /// Got an HTML page instead of an XML page
-    FeedWasHTMLError(String)
+    WasHTML(String)
 }
 //
 //  Encapsulate errors from each of the lower level error types
 //
 impl convert::From<reqwest::Error> for FeedError {
     fn from(err: reqwest::Error) -> FeedError {
-        FeedError::FeedHTTPError(err)
+        FeedError::Http(err)
     }
 }
 impl convert::From<io::Error> for FeedError {
     fn from(err: io::Error) -> FeedError {
-        FeedError::FeedIoError(err)
+        FeedError::Io(err)
     }
 }
 
 impl convert::From<xml::BuilderError> for FeedError {
     fn from(err: xml::BuilderError) -> FeedError {
-        FeedError::FeedXMLParseError(err)
+        FeedError::XMLParse(err)
     }
 }
 
 impl convert::From<chrono::format::ParseError> for FeedError {
     fn from(err: chrono::format::ParseError) -> FeedError {
-        FeedError::FeedDateParseError(err)
+        FeedError::DateParse(err)
     }
 }
 
@@ -118,13 +118,13 @@ impl convert::From<chrono::format::ParseError> for FeedError {
 impl fmt::Display for FeedError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &FeedError::FeedIoError(ref xerr) => xerr.fmt(f),   // I/O error
-            &FeedError::FeedHTTPError(ref xerr) => xerr.fmt(f), // HTTP error
-            &FeedError::FeedXMLParseError(ref xerr) => xerr.fmt(f), // XML parse error
-            &FeedError::FeedDateParseError(ref xerr) => xerr.fmt(f), // Date parse error
-            &FeedError::FeedUnknownFeedTypeError => write!(f, "Unknown feed type."),
-            &FeedError::FeedFieldError(ref s) => write!(f, "Required field \"{}\" missing from RSS/Atom feed.", s),
-            &FeedError::FeedWasHTMLError(ref s) => write!(f, "Expected an RSS/ATOM feed but received a web page \"{}\".", s)
+            FeedError::Io(ref xerr) => xerr.fmt(f),   // I/O error
+            FeedError::Http(ref xerr) => xerr.fmt(f), // HTTP error
+            FeedError::XMLParse(ref xerr) => xerr.fmt(f), // XML parse error
+            FeedError::DateParse(ref xerr) => xerr.fmt(f), // Date parse error
+            FeedError::UnknownFeedType => write!(f, "Unknown feed type."),
+            FeedError::Field(ref s) => write!(f, "Required field \"{}\" missing from RSS/Atom feed.", s),
+            FeedError::WasHTML(ref s) => write!(f, "Expected an RSS/ATOM feed but received a web page \"{}\".", s)
             //_(ref xerr) => xerr.fmt(f) // would be convenient, but not allowed in Rust.
         }
     }
@@ -162,7 +162,7 @@ impl FeedItem {
         println!(" Author: {}", self.author);
         println!(" Publication date: {}", self.pubdate);
         println!(" Description:\n{}", &wordwrap::wordwrap(&self.description, 72,20));
-        println!("");
+        println!();
     }
 }
 
@@ -177,7 +177,7 @@ impl FeedChannel {
         println!(" Title: {}", self.title);
         println!(" Link: {}", self.link);
         println!(" Description: {}", self.description);
-        println!("");
+        println!();
     }
 }
     
@@ -211,15 +211,15 @@ pub fn handlersstree(tree: &xml::Element, reply: &mut FeedReply) -> FeedResult<(
     //println!("Tree: {}\n\n", tree);                       // ***TEMP***
     //  ***NEED TO COLLECT CHANNEL INFO***
     let mut itemelts = Vec::<&xml::Element>::new();         // accumulate ITEM entries
-    fn isitem(e: &xml::Element) -> bool { e.name == "item" };// someday this will be an unboxed lambda
+    fn isitem(e: &xml::Element) -> bool { e.name == "item" }// someday this will be an unboxed lambda
     find_all(tree, isitem, &mut itemelts, false);           // find all items
     for itemelt in itemelts.iter() {                        // extract important fields from items
         let mut authorstr = String::new();                  // title string
-        fn isauthor(e: &xml::Element) -> bool { e.name == "author" }; // someday this will be an unboxed lambda
+        fn isauthor(e: &xml::Element) -> bool { e.name == "author" } // someday this will be an unboxed lambda
         find_tag_text(*itemelt, isauthor, &mut authorstr);
         
         let mut pubdatestr = String::new();                 // date string
-        fn ispubdate(e: &xml::Element) -> bool { e.name == "pubDate" }; // someday this will be an unboxed lambda
+        fn ispubdate(e: &xml::Element) -> bool { e.name == "pubDate" } // someday this will be an unboxed lambda
         find_tag_text(*itemelt, ispubdate, &mut pubdatestr);
         let pubtimestamp = match chrono::DateTime::parse_from_rfc2822(&pubdatestr) {       
             Ok(date) => date,
@@ -227,11 +227,11 @@ pub fn handlersstree(tree: &xml::Element, reply: &mut FeedReply) -> FeedResult<(
         };
         
         let mut titlestr = String::new();                   // title string
-        fn istitle(e: &xml::Element) -> bool { e.name == "title" }; // someday this will be an unboxed lambda
+        fn istitle(e: &xml::Element) -> bool { e.name == "title" } // someday this will be an unboxed lambda
         find_tag_text(*itemelt, istitle, &mut titlestr);
 
         let mut descriptionstr = String::new();             // description string
-        fn isdescription(e: &xml::Element) -> bool { e.name == "description" }; // someday this will be an unboxed lambda
+        fn isdescription(e: &xml::Element) -> bool { e.name == "description" } // someday this will be an unboxed lambda
         find_tag_text(*itemelt, isdescription, &mut descriptionstr);
 
         let feeditem = FeedItem{title: titlestr, description: descriptionstr, author: authorstr, pubdate: pubtimestamp};
@@ -269,7 +269,7 @@ pub fn readfeed(url: &str, reply: &mut FeedReply, verbose: bool) -> FeedResult<(
                 match rep {
                     Ok(ev) => match handletree(&ev, reply) {// we have an XML tree to process
                         Ok(()) => (),
-                        Err(xerr) => return Err(convert::From::from(xerr))   // RSS/Atom error
+                        Err(xerr) => return Err(xerr)   // RSS/Atom error
                         },                                  // end match handletree
                     Err(xerr) => return Err(convert::From::from(xerr)) 
                     }                                       // end match rep

@@ -3,7 +3,6 @@
 //  
 //  Useful for debugging outputs of long text.
 //  
-use std::io;
 use std::str;
 extern crate unicode_segmentation;
 extern crate itertools;
@@ -20,7 +19,7 @@ fn rfind(s: &[&str], key: &str) -> Option<usize> {
 ///  wordwrapline --  wordwrap for one line
 ///
 fn wordwrapline(line: &[&str], maxline: usize, maxword: usize) -> String {
-    let mut wline = &line[..];                  // mut ref to array of graphemes as slice                    
+    let mut wline = line;                       // mut ref to array of graphemes as slice                    
     let mut sline = Vec::<&str>::new();         // working vector of graphemes, which are string slices
     while wline.len() > maxline {               // while line too long
         let ix = rfind(&wline[maxline-maxword .. maxline]," ");              // find rightmost space
@@ -33,7 +32,7 @@ fn wordwrapline(line: &[&str], maxline: usize, maxword: usize) -> String {
                       &wline[ix+maxline-maxword+1 ..] } // return shorter wline
         }
     }
-    sline.extend(&wline[..]);                   // accum remainder of line
+    sline.extend(wline);                        // accum remainder of line
     sline.join("")                              // return string
 }
 ///
